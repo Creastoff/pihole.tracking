@@ -9,7 +9,7 @@ This is a self-hosted, LAN-oriented tool. It is not an Internet-facing or multi-
 ## Current MVP
 
 - Stores known domains, the local block list, sync history, and investigation notes server-side in `data/review-state.json`.
-- Stores connection and UI configuration server-side in `data/config.json`; browser `localStorage` contains only a configuration fallback. Query-log data is fetched live and is not loaded from cache.
+- Stores connection and UI configuration server-side in `data/config.json`. Query-log data is fetched live and is not loaded from cache.
 - Connects to Pi-hole v6 using a short-lived session. The supplied password is not persisted.
 - Imports paginated `/api/queries` data and aggregates query count, clients, first/last seen, and status per domain.
 - Supports date range selection and on-disk history.

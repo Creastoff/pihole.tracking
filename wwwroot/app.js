@@ -23,7 +23,6 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
-  clearLegacyLocalState();
   await loadReviewState();
   render();
   reconnectSavedPihole();
@@ -73,8 +72,7 @@ async function loadReviewState() {
     if (!response.ok) throw new Error('configuration unavailable');
     applyConfig(await response.json());
   } catch (error) {
-    loadLocalConfig();
-    showToast(`Could not load server configuration; using the local configuration fallback: ${error.message}`);
+    showToast(`Could not load server configuration: ${error.message}`);
   }
 }
 
@@ -92,20 +90,6 @@ function applyConfig(config) {
   if (config.sort) state.sort = config.sort;
   $$('.filter-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.filter === state.filter));
   $('#sort-select').value = state.sort;
-}
-
-function loadLocalConfig() {
-  try {
-    const savedConfig = JSON.parse(localStorage.getItem('domain-review-config') || '{}');
-    applyConfig(savedConfig);
-  } catch {
-    // Ignore malformed configuration fallback and wait for an explicit connection.
-  }
-}
-
-function clearLegacyLocalState() {
-  ['domain-review-known', 'domain-review-block-list', 'domain-review-synced', 'domain-review-investigations']
-    .forEach((key) => localStorage.removeItem(key));
 }
 
 async function reconnectSavedPihole() {
@@ -578,7 +562,6 @@ async function persistConfig() {
     ipFilter: state.ipFilter,
     sort: state.sort
   };
-  localStorage.setItem('domain-review-config', JSON.stringify(config));
   try {
     const response = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) });
     if (!response.ok) {
@@ -586,7 +569,7 @@ async function persistConfig() {
       throw new Error(data.error || 'server rejected the configuration');
     }
   } catch (error) {
-    showToast(`Configuration is saved in the browser only; server save failed: ${error.message}`);
+    showToast(`Could not save server configuration: ${error.message}`);
   }
 }
 
