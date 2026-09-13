@@ -1,11 +1,10 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
-    [string]$PiHost,
+    [Parameter(Mandatory = $false, Position = 0)]
+    [string]$PiHost = "kristof-rp",
 
-    [Parameter(Mandatory = $true)]
     [ValidatePattern('^[a-z_][a-z0-9_-]*$')]
-    [string]$PiUser,
+    [string]$PiUser = "kristof",
 
     [ValidateRange(1, 65535)]
     [int]$PiPort = 22,
