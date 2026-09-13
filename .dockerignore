@@ -8,5 +8,11 @@ data
 artifacts
 *.user
 *.suo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
 README.md
 tests

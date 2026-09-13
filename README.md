@@ -1,8 +1,10 @@
 # Pi-hole Domain Review
 
-A local review queue for Pi-hole query logs. It groups raw DNS requests into unique domains so you can mark recognised domains as known, filter them out, and add the remaining domains to a private block list for later action.
+A local review queue for Pi-hole query logs. It groups raw DNS requests into unique domains so you can mark recognised domains as known, filter them out, and add the remaining domains to a local block list for later action.
 
-This is a self-hosted, LAN-oriented tool. It has no built-in user authentication, so keep it on a trusted network or put it behind an authenticated reverse proxy before exposing it more widely.
+This is a self-hosted, LAN-oriented tool. It is not an Internet-facing or multi-user service.
+
+> **Security warning:** The application has no built-in authentication or authorization. Anyone who can reach its HTTP port can read and change the shared review state, and can submit Pi-hole connection requests. Run it only on a trusted, firewall-restricted LAN; do not port-forward it to the Internet. If broader access is essential, use an authenticated HTTPS reverse proxy and keep the Pi-hole URL limited to a trusted destination. The default Compose setup uses plain HTTP and publishes port `5178` on all host interfaces.
 
 ## Current MVP
 
@@ -29,9 +31,9 @@ mkdir -p data
 docker compose up -d --build
 ```
 
-Open `http://<raspberry-pi-hostname>:5178/` from a device on the same network. In the app, enter the Pi-hole URL as seen from the container. If Pi-hole is running on the same Pi, `http://host.docker.internal:<pihole-port>` is available through the Compose host mapping; `localhost` refers to the review container itself.
+Open `http://<raspberry-pi-hostname>:5178/` from a device on the same trusted network. In the app, enter the Pi-hole URL as seen from the container. If Pi-hole is running on the same Pi, `http://host.docker.internal:<pihole-port>` is available through the Compose host mapping; `localhost` refers to the review container itself. The default port is unauthenticated plain HTTP, so restrict it with the Pi's firewall and do not expose it beyond the LAN.
 
-The bind-mounted `data/` directory contains the persistent server-side configuration and review decisions. It is not included in the image, so rebuilding or replacing the container does not remove them. Use `docker compose logs -f` to inspect startup and Pi-hole connection errors, and `docker compose restart` after configuration changes.
+The bind-mounted `data/` directory contains the persistent server-side configuration and review decisions. It is not included in the image, so rebuilding or replacing the container does not remove them. Use `docker compose logs -f` to inspect startup and Pi-hole connection errors, and `docker compose restart` after configuration changes. If you enter a Pi-hole password while using an `http://` Pi-hole URL, that credential and the resulting session travel over the local network without TLS; use HTTPS where available.
 
 To build on another machine and target a 64-bit Raspberry Pi:
 
@@ -69,7 +71,7 @@ The app keeps “Known” separate from Pi-hole’s rules. Marking a domain know
 
 ## Data and configuration
 
-Runtime state is intentionally excluded from Git. The ignored `data/` directory contains the server-side configuration and review decisions; query-log data is not persisted by the app. Do not commit Pi-hole passwords, query-log exports, or private network details.
+Runtime state is intentionally excluded from Git. The ignored `data/` directory contains the server-side configuration and review decisions; query-log data is not persisted by the app. The saved Pi-hole URL may still reveal a private hostname or address. Do not commit Pi-hole passwords, query-log exports, private network details, `.env` files, or private-key/certificate files.
 
 ## Notes
 

@@ -7,6 +7,7 @@ services:
     container_name: pihole-domain-review
     restart: unless-stopped
     ports:
+      # Unauthenticated plain HTTP; restrict this port to a trusted LAN with your host firewall.
       - "5178:5178"
     extra_hosts:
       - "host.docker.internal:host-gateway"

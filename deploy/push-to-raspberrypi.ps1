@@ -36,6 +36,11 @@ try {
         --exclude=./obj `
         --exclude=./data `
         --exclude=./artifacts `
+        --exclude=./.env `
+        --exclude=./.env.* `
+        --exclude=./*.pem `
+        --exclude=./*.key `
+        --exclude=./*.pfx `
         -C $repoRoot .
     if ($LASTEXITCODE -ne 0) {
         throw "Could not create the deployment archive (exit code $LASTEXITCODE)."
