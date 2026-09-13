@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e8">
+  <title>Domain Review · Pi-hole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Domain Review home">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <span>domain<span class="brand-slash">/</span>review</span>
+      </a>
+      <div class="connection-pill" id="connection-pill">
+        <span class="status-dot"></span>
+        <span id="connection-label">Not connected</span>
+        <button class="text-button" id="connect-button">Connect</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">PI-HOLE / DOMAIN HYGIENE</p>
+          <h1>Make sense of<br><em>every request.</em></h1>
+          <p class="lede">A calm review queue for the domains your network is talking to. Mark what you know, then add candidates to a private block list for later action.</p>
+        </div>
+        <div class="intro-note">
+          <span class="note-line"></span>
+          <p>Known domains stay here.<br><strong>Sync block decisions when ready.</strong></p>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Review summary">
+        <article class="stat-card stat-card-dark">
+          <div class="stat-label">Domains in view <span class="stat-icon">◌</span></div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-foot">Unique domains found</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Needs review <span class="stat-icon warm">◒</span></div>
+          <div class="stat-value" id="stat-review">—</div>
+          <div class="stat-foot" id="stat-review-foot">Unrecognised domains</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Marked known <span class="stat-icon green">✓</span></div>
+          <div class="stat-value" id="stat-known">—</div>
+          <div class="stat-foot">Your local review list</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Queries scanned <span class="stat-icon blue">↗</span></div>
+          <div class="stat-value" id="stat-queries">—</div>
+          <div class="stat-foot" id="stat-source">No live import yet</div>
+        </article>
+      </section>
+
+      <section class="workspace-card">
+        <div class="workspace-head">
+          <div>
+            <div class="section-kicker"><span class="live-dot"></span> REVIEW QUEUE</div>
+            <h2>What’s new to you?</h2>
+          </div>
+          <div class="workspace-actions">
+            <button class="button button-quiet" id="refresh-button"><span>↻</span> Refresh</button>
+            <button class="button button-quiet" id="sync-block-list-button">Sync to Pi-hole</button>
+            <button class="button button-primary" id="mark-visible-button">Mark visible known</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="search-input" type="search" placeholder="Search domains or clients" autocomplete="off">
+          </label>
+          <div class="filter-tabs" role="tablist" aria-label="Review status">
+            <button class="filter-tab active" data-filter="needs-review">Needs review <span id="tab-review-count">0</span></button>
+            <button class="filter-tab" data-filter="all">All <span id="tab-all-count">0</span></button>
+            <button class="filter-tab" data-filter="known">Known <span id="tab-known-count">0</span></button>
+            <button class="filter-tab" data-filter="investigate">Investigate <span id="tab-investigate-count">0</span></button>
+            <button class="filter-tab" data-filter="blocked">Block list <span id="tab-blocked-count">0</span></button>
+          </div>
+          <label class="select-wrap ip-filter-wrap">
+            <span>IP</span>
+            <select id="ip-filter" aria-label="Filter by IP">
+              <option value="all">All IPs</option>
+            </select>
+          </label>
+          <label class="select-wrap">
+            <span>Sort</span>
+            <select id="sort-select">
+              <option value="queries">Most queried</option>
+              <option value="recent">Last seen</option>
+              <option value="alpha">A–Z</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="range-row">
+          <div class="range-copy"><span class="range-icon">◷</span><span id="range-label">Connect Pi-hole · last 30 days</span></div>
+          <div class="range-controls">
+            <select id="range-select" aria-label="Query range">
+              <option value="86400">Last 24 hours</option>
+              <option value="604800">Last 7 days</option>
+              <option value="2592000" selected>Last 30 days</option>
+              <option value="all">All retained</option>
+            </select>
+            <label class="check-control"><input id="disk-checkbox" type="checkbox" checked><span>Include on-disk history</span></label>
+            <label class="check-control"><input id="hide-pihole-blocked" type="checkbox" checked><span>Hide Pi-hole blocked</span></label>
+          </div>
+        </div>
+        <div class="local-block-note"><strong>Local block list:</strong> decisions stay here until you choose Sync to Pi-hole. Sync adds exact deny-list entries and never removes existing Pi-hole entries automatically.</div>
+
+        <div class="notice hidden" id="truncated-notice"></div>
+        <div class="loading-state hidden" id="loading-state"><span class="spinner"></span> Reading the query log…</div>
+        <div class="empty-state hidden" id="empty-state">
+          <div class="empty-icon">⌁</div>
+          <h3>Connect to Pi-hole to begin</h3>
+          <p>No cached query data is loaded.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Domain</th><th>Activity</th><th>Seen from</th><th>Last seen</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody id="domain-table"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="result-summary">—</span><span class="mono">LOCAL REVIEW STATE</span></div>
+      </section>
+    </main>
+
+    <footer class="footer"><span>Domain Review</span><span>Built for thoughtful network hygiene</span><span id="footer-version">MVP · v0.1</span></footer>
+  </div>
+
+  <dialog class="modal" id="connect-modal">
+    <form method="dialog" class="modal-card" id="connect-form">
+      <button class="modal-close" type="button" aria-label="Close">×</button>
+      <p class="eyebrow">CONNECT TO PI-HOLE</p>
+      <h2>Bring in your query log.</h2>
+      <p class="modal-copy">If your Pi-hole has no password configured, leave this blank. Otherwise it is used only to establish a short-lived session and is never written to disk.</p>
+      <label class="field-label" for="pihole-url">Pi-hole URL</label>
+      <input class="field-input" id="pihole-url" type="url" placeholder="http://pi.hole" required>
+      <label class="field-label" for="pihole-password">Application password <span>(optional)</span></label>
+      <input class="field-input" id="pihole-password" type="password" placeholder="Leave blank if disabled">
+      <label class="field-label" for="pihole-totp">2FA code <span>(optional)</span></label>
+      <input class="field-input" id="pihole-totp" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+      <p class="form-error hidden" id="connect-error"></p>
+      <div class="modal-actions"><button class="button button-quiet" type="button" id="cancel-connect">Cancel</button><button class="button button-primary" id="submit-connect" value="default">Connect and load</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="investigation-modal">
+    <form method="dialog" class="modal-card" id="investigation-form">
+      <button class="modal-close" type="button" aria-label="Close">×</button>
+      <p class="eyebrow">DOMAIN INVESTIGATION</p>
+      <h2>Keep a note.</h2>
+      <p class="modal-copy">This removes the domain from Needs review and keeps your note in a separate investigation list. You can edit or clear it later.</p>
+      <div class="investigation-domain" id="investigation-domain"></div>
+      <label class="field-label" for="investigation-notes">Notes</label>
+      <textarea class="field-input field-textarea" id="investigation-notes" maxlength="2000" rows="6" placeholder="What do you want to check about this domain?"></textarea>
+      <p class="form-error hidden" id="investigation-error"></p>
+      <div class="modal-actions"><button class="button button-quiet" type="button" id="cancel-investigation">Cancel</button><button class="button button-primary" id="save-investigation" value="default">Save investigation</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

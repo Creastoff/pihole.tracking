@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore tests/PiHoleTracking.Tests/PiHoleTracking.Tests.csproj
+
+      - name: Build
+        run: dotnet build PiHoleTracking.csproj --configuration Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test tests/PiHoleTracking.Tests/PiHoleTracking.Tests.csproj --configuration Release --no-restore --verbosity normal
+
+      - name: Check browser JavaScript
+        run: node --check wwwroot/app.js
+
+      - name: JavaScript unit tests
+        run: node --test tests/js/app.test.js
+
+      - name: Build Docker image
+        run: docker build --tag pihole-domain-review:ci .

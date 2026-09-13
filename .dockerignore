@@ -1,0 +1,12 @@
+.git
+.gitignore
+.codex
+.agents
+bin
+obj
+data
+artifacts
+*.user
+*.suo
+README.md
+tests
