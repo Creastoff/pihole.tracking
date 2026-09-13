@@ -44,17 +44,42 @@ try {
     $remoteCommand = @"
 set -eu
 mkdir -p "$remotePath"
-base64 -d - | tar -xzf - -C "$remotePath"
+    base64 -d - | tar -xzf - -C "$remotePath"
 cd "$remotePath"
 bash deploy/start-container.sh
 "@
+    $remoteCommand = $remoteCommand -replace "`r`n", "`n"
     Write-Host "Pushing to $sshTarget. OpenSSH will ask for the SSH password once."
 
     $archiveBase64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($archivePath))
-    $archiveBase64 |
-        & ssh.exe -p $PiPort -o StrictHostKeyChecking=accept-new $sshTarget $remoteCommand
-    if ($LASTEXITCODE -ne 0) {
-        throw "Remote deployment failed (exit code $LASTEXITCODE)."
+    $sshStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $sshStartInfo.FileName = (Get-Command ssh.exe).Source
+    $sshStartInfo.UseShellExecute = $false
+    $sshStartInfo.RedirectStandardInput = $true
+    $sshStartInfo.ArgumentList.Add('-p')
+    $sshStartInfo.ArgumentList.Add($PiPort.ToString())
+    $sshStartInfo.ArgumentList.Add('-o')
+    $sshStartInfo.ArgumentList.Add('StrictHostKeyChecking=accept-new')
+    $sshStartInfo.ArgumentList.Add($sshTarget)
+    $sshStartInfo.ArgumentList.Add($remoteCommand)
+
+    $sshProcess = [System.Diagnostics.Process]::new()
+    try {
+        $sshProcess.StartInfo = $sshStartInfo
+        if (-not $sshProcess.Start()) {
+            throw 'Could not start ssh.exe.'
+        }
+
+        $writeTask = $sshProcess.StandardInput.WriteAsync($archiveBase64)
+        $writeTask.GetAwaiter().GetResult()
+        $sshProcess.StandardInput.Close()
+        $sshProcess.WaitForExit()
+        if ($sshProcess.ExitCode -ne 0) {
+            throw "Remote deployment failed (exit code $($sshProcess.ExitCode))."
+        }
+    }
+    finally {
+        $sshProcess.Dispose()
     }
 
     Write-Host "Deployment complete. Open http://$PiHost`:5178/"
