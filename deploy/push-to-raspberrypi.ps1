@@ -20,6 +20,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $archivePath = Join-Path ([System.IO.Path]::GetTempPath()) ("pihole-domain-review-{0}.tar.gz" -f [guid]::NewGuid().ToString('N'))
 $sshTarget = "$PiUser@$PiHost"
 $remotePath = "`$HOME/$RemoteDirectory"
+$excludeFile = Join-Path $repoRoot 'deploy/deploy.exclude'
+$startScript = Join-Path $repoRoot 'deploy/start-container.sh'
 
 try {
     if (-not (Get-Command tar.exe -ErrorAction SilentlyContinue)) {
@@ -28,19 +30,13 @@ try {
     if (-not (Get-Command ssh.exe -ErrorAction SilentlyContinue)) {
         throw 'ssh.exe is required. Install or enable Windows OpenSSH.'
     }
+    if (-not (Test-Path -LiteralPath $excludeFile) -or -not (Test-Path -LiteralPath $startScript)) {
+        throw 'The shared deployment files in deploy/ are missing.'
+    }
 
     Write-Host "Creating deployment archive..."
     & tar.exe -czf $archivePath `
-        --exclude=./.git `
-        --exclude=./bin `
-        --exclude=./obj `
-        --exclude=./data `
-        --exclude=./artifacts `
-        --exclude=./.env `
-        --exclude=./.env.* `
-        --exclude=./*.pem `
-        --exclude=./*.key `
-        --exclude=./*.pfx `
+        --exclude-from=$excludeFile `
         -C $repoRoot .
     if ($LASTEXITCODE -ne 0) {
         throw "Could not create the deployment archive (exit code $LASTEXITCODE)."
@@ -51,18 +47,7 @@ set -eu
 mkdir -p "$remotePath"
 base64 -d - | tar -xzf - -C "$remotePath"
 cd "$remotePath"
-if ! command -v docker >/dev/null 2>&1; then
-    echo 'Docker is not installed or is not on the SSH user PATH.' >&2
-    exit 20
-fi
-if docker compose version >/dev/null 2>&1; then
-    docker compose up -d --build
-elif command -v docker-compose >/dev/null 2>&1; then
-    docker-compose up -d --build
-else
-    echo 'Docker Compose is not installed.' >&2
-    exit 21
-fi
+bash deploy/start-container.sh
 "@
     Write-Host "Pushing to $sshTarget. OpenSSH will ask for the SSH password once."
 
