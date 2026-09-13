@@ -52,6 +52,22 @@ If the Pi already has Docker and the SSH user can run `docker compose` without a
 
 OpenSSH prompts for the SSH password once. The script streams the project archive directly to the Pi, excludes the local `data/` directory, and runs `docker compose up -d --build` in `~/pihole-domain-review`. Existing data on the Pi is preserved. Use `-PiPort` if SSH is not on port 22 or `-RemoteDirectory` to change the deployment folder.
 
+### Push from Linux, macOS, or WSL over SSH
+
+The portable Bash script has the same behavior and uses positional arguments:
+
+```bash
+bash ./deploy/push-to-raspberrypi.sh <raspberry-pi-hostname> <ssh-user>
+```
+
+Optional third and fourth arguments set the SSH port and remote directory:
+
+```bash
+bash ./deploy/push-to-raspberrypi.sh <host> <ssh-user> <ssh-port> <remote-directory>
+```
+
+It requires local `ssh` and `tar`, plus Docker Compose on the Pi. The SSH user must be able to run Docker without an interactive `sudo` password prompt. The script excludes Git metadata, runtime data, build output, environment files, and private-key/certificate files from the deployment archive.
+
 ## Run locally
 
 ```powershell
